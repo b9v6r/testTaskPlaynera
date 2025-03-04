@@ -1,0 +1,66 @@
+Этот скрипт управляет прокруткой (скроллом) камеры, если игрок кликает в любое место экрана, кроме объекта персонажа.
+
+1. Переменные
+csharp
+Копировать код
+private float scrollSpeed = 0.01f;
+private float minX = 0f;
+private float maxX = 23f;
+public Camera scrollCamera;
+private bool isDragging = false;
+private Vector2 lastMousePosition;
+public Collider2D ghCollider;
+
+scrollSpeed – скорость перемещения камеры.
+minX, maxX – ограничения по X, чтобы камера не выходила за границы.
+scrollCamera – ссылка на вторую камеру, которая будет двигаться.
+isDragging – флаг, определяющий, тянет ли игрок камеру.
+lastMousePosition – последняя позиция мыши для расчета смещения.
+ghCollider – коллайдер персонажа, нужен для проверки, что клик сделан НЕ по нему.
+
+2. Update() – обработка ввода
+csharp
+Копировать код
+Vector2 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+Получаем координаты курсора в мировом пространстве.
+Обнаружение клика
+csharp
+Копировать код
+if (Input.GetMouseButtonDown(0)) {
+    if (ghCollider == null || !ghCollider.OverlapPoint(mouseWorldPos)) {
+        isDragging = true;
+        lastMousePosition = Input.mousePosition;
+    }
+}
+Проверяем, что нажата левая кнопка мыши (ЛКМ).
+Если ghCollider не задан или клик не попал по персонажу, разрешаем движение камеры.
+Запоминаем позицию мыши.
+Когда кнопка отпущена – прекращаем движение
+csharp
+Копировать код
+if (Input.GetMouseButtonUp(0)) {
+    isDragging = false;
+}
+Если ЛКМ отпущена, сбрасываем isDragging.
+3. Перемещение камеры
+csharp
+Копировать код
+if (isDragging && Input.GetMouseButton(0) && scrollCamera != null) {
+    Vector2 currentMousePosition = Input.mousePosition;
+    Vector2 deltaPosition = (currentMousePosition - lastMousePosition) * scrollSpeed;
+Проверяем, что камера должна двигаться (isDragging == true и ЛКМ зажата).
+Определяем разницу между текущей и предыдущей позицией мыши (deltaPosition).
+csharp
+Копировать код
+float newX = Mathf.Clamp(scrollCamera.transform.position.x + deltaPosition.x, minX, maxX);
+scrollCamera.transform.position = new Vector3(newX, scrollCamera.transform.position.y, scrollCamera.transform.position.z);
+Вычисляем новую позицию по X и ограничиваем её minX и maxX.
+Обновляем позицию камеры, но только по X (не меняем Y и Z).
+csharp
+Копировать код
+lastMousePosition = currentMousePosition;
+Запоминаем новую позицию мыши для следующего кадра.
+Как работает скрипт?
+Если игрок кликает не по персонажу, то активируется isDragging.
+Пока зажата ЛКМ, камера двигается по X в сторону движения мыши.
+Если ЛКМ отпущена, скролл прекращается.

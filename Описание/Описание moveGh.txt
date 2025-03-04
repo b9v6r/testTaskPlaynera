@@ -1,0 +1,87 @@
+Этот скрипт отвечает за перемещение персонажа при перетаскивании мышью и автоматически двигает камеру, следуя за персонажем.
+
+Как работает скрипт?
+Клик по персонажу
+
+Если ЛКМ нажата и курсор попал в коллайдер персонажа, то включается режим перетаскивания (isDragging = true).
+Перемещение персонажа
+
+Пока ЛКМ зажата, объект следует за мышью, двигаясь в пределах заданных границ.
+Автоматическое движение камеры
+
+Если персонаж двигается, камера плавно смещается вслед за ним (по X).
+Разбор кода
+1. Переменные
+csharp
+Копировать код
+private float moveSpeed = 0.01f;
+private float minX = -1f, maxX = 24f;
+private float minY = -4f, maxY = 4f;
+private float cameraFollowSpeed = 3f;
+moveSpeed – скорость движения персонажа.
+minX, maxX, minY, maxY – границы перемещения.
+cameraFollowSpeed – скорость слежения камеры.
+csharp
+Копировать код
+private bool isDragging = false;
+private Vector2 lastMousePosition;
+private Collider2D characterCollider;
+isDragging – флаг, активируется при перетаскивании персонажа.
+lastMousePosition – сохраняет предыдущую позицию мыши.
+characterCollider – коллайдер персонажа, чтобы проверять клики по нему.
+2. Проверка нажатия на персонажа
+csharp
+Копировать код
+void Start() {
+	characterCollider = GetComponent<Collider2D>();
+}
+Получаем коллайдер персонажа при старте.
+csharp
+Копировать код
+if (Input.GetMouseButtonDown(0)) {
+    if (characterCollider != null && characterCollider.OverlapPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition))) {
+        isDragging = true;
+        lastMousePosition = Input.mousePosition;
+    }
+}
+Если ЛКМ нажата и курсор попал в персонажа, активируем перемещение (isDragging = true).
+Запоминаем позицию мыши.
+csharp
+Копировать код
+else if (Input.GetMouseButtonUp(0)) {
+    isDragging = false;
+}
+Когда ЛКМ отпускают, перемещение завершается.
+3. Движение персонажа
+csharp
+Копировать код
+if (isDragging) {
+    Vector2 currentMousePosition = Input.mousePosition;
+    Vector2 deltaPosition = (currentMousePosition - lastMousePosition) * moveSpeed;
+Если персонаж тянется, вычисляем насколько сдвинулась мышь.
+csharp
+Копировать код
+Vector3 newPosition = transform.position + new Vector3(deltaPosition.x, deltaPosition.y, 0);
+Добавляем этот сдвиг к текущей позиции персонажа.
+csharp
+Копировать код
+newPosition.x = Mathf.Clamp(newPosition.x, minX, maxX);
+newPosition.y = Mathf.Clamp(newPosition.y, minY, maxY);
+Ограничиваем границы движения (чтобы персонаж не выходил за пределы экрана).
+csharp
+Копировать код
+transform.position = newPosition;
+lastMousePosition = currentMousePosition;
+Обновляем позицию персонажа и запоминаем новую позицию мыши.
+4. Движение камеры
+csharp
+Копировать код
+if (Camera.main != null) {
+    if (isDragging) {
+        float clampedX = Mathf.Clamp(transform.position.x, 0f, 23f);
+        Vector3 targetPosition = new Vector3(clampedX, Camera.main.transform.position.y, Camera.main.transform.position.z);
+        Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, targetPosition, Time.deltaTime * cameraFollowSpeed);
+    }
+}
+Если персонаж двигается, то камера медленно догоняет его (Lerp делает плавное движение).
+Камера следит только за X координатой (без изменения Y и Z).

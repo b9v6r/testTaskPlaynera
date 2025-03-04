@@ -1,0 +1,91 @@
+Этот скрипт отвечает за физику персонажа, добавляя гравитацию, остановку при падении на землю и взаимодействие с объектами (например, полками).
+
+Как работает скрипт?
+Включает гравитацию при отпускании ЛКМ (если персонаж не на полке).
+Останавливает падение на уровне земли.
+Меняет размер персонажа при взаимодействии с полками.
+Возвращает размер при выходе с полки.
+Разбор кода
+1. Переменные
+csharp
+Копировать код
+private Rigidbody2D rb;
+private CapsuleCollider2D capsuleCollider;
+private float groundY = -4f;
+private bool isOnShelf = false;
+rb – ссылка на физическое тело персонажа (Rigidbody2D).
+capsuleCollider – не используется (можно удалить).
+groundY = -4f – уровень земли, на котором персонаж останавливается.
+isOnShelf – проверяет, находится ли персонаж на полке (чтобы не включать гравитацию).
+2. Инициализация
+csharp
+Копировать код
+void Start() {
+	rb = GetComponent<Rigidbody2D>();
+}
+Получаем компонент Rigidbody2D при старте.
+3. Включение гравитации
+csharp
+Копировать код
+if (Input.GetMouseButtonUp(0)) {
+    if (rb.gravityScale == 0 && !isOnShelf) {
+        EnableGravity();
+    }
+}
+Если отпустили ЛКМ и гравитация выключена (gravityScale == 0), включаем гравитацию.
+Не включаем гравитацию, если персонаж на полке (isOnShelf == true).
+csharp
+Копировать код
+void EnableGravity() {
+    if (rb != null) {
+        rb.gravityScale = 2f;
+    }
+}
+Включаем гравитацию (gravityScale = 2f).
+4. Остановка при падении
+csharp
+Копировать код
+if (transform.position.y <= groundY) {
+    StopFalling();
+}
+Если персонаж достиг уровня земли, он останавливается.
+csharp
+Копировать код
+void StopFalling() {
+    if (rb != null) {
+        rb.gravityScale = 0f;
+        rb.velocity = Vector2.zero;
+        Vector3 currentPosition = transform.position;
+        transform.position = new Vector3(currentPosition.x, groundY, currentPosition.z);
+    }
+}
+Отключаем гравитацию (gravityScale = 0f).
+Обнуляем скорость, чтобы не проваливался дальше.
+Устанавливаем точное положение на уровне groundY.
+5. Взаимодействие с полками
+csharp
+Копировать код
+void OnTriggerStay2D(Collider2D other) {
+    if (other.CompareTag("shelf")) {
+        transform.localScale -= new Vector3(0.008f, 0.008f, 0f);
+        if (transform.localScale.x <= 0.25f || transform.localScale.y <= 0.25f) {
+            transform.localScale = new Vector3(0.25f, 0.25f, 1f);
+            isOnShelf = true;
+        }
+    }
+}
+Если персонаж касается объекта с тегом "shelf":
+Постепенно уменьшается в размере.
+Минимальный размер 0.25 по X и Y.
+Устанавливается флаг isOnShelf = true.
+6. Выход с полки
+csharp
+Копировать код
+void OnTriggerExit2D(Collider2D other) {
+    if (other.CompareTag("shelf")) {
+        transform.localScale = new Vector3(0.45f, 0.45f, 1f);
+        isOnShelf = false;
+    }
+}
+Если персонаж покинул полку, он возвращает исходный размер (0.45).
+Флаг isOnShelf сбрасывается (false), гравитация снова работает.
